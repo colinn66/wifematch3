@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的老婆消消乐</title>
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      flex-direction: column;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      background: -webkit-linear-gradient(45deg, #ff6ec4, #7873f5);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .game-container {
+      display: flex;
+      gap: 2rem;
+      background: #2d2d3c;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(8, 80px);
+      grid-template-rows: repeat(8, 80px);
+      gap: 2px;
+    }
+    .tile {
+      width: 80px;
+      height: 80px;
+      border-radius: 0.5rem;
+      transition: transform 0.3s, opacity 0.3s;
+      cursor: pointer;
+      object-fit: cover;
+    }
+    .selected {
+      border: 3px solid yellow;
+      box-sizing: border-box;
+    }
+    .score-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .score {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .quote {
+      background: #393952;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      font-style: italic;
+      max-width: 200px;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      background-color: #7873f5;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .disappear {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>我的老婆消消乐</h1>
+  <div class="game-container">
+    <div id="board"></div>
+    <div class="score-panel">
+      <div class="score">分数：<span id="score">0</span></div>
+      <div class="quote" id="quote">准备好了么？</div>
+      <button onclick="startNewGame()">开始新游戏</button>
+    </div>
+  </div>
+  <script>
+    const size = 8;
+    const tileSize = 80;
+    const tileImages = [
+      'https://itcoffee-util.oss-cn-beijing.aliyuncs.com/1-22-e1516102599464.jpg',
+      'https://itcoffee-util.oss-cn-beijing.aliyuncs.com/46ce3c7d7f77c06128b7e5237982f166.jpg',
+      'https://itcoffee-util.oss-cn-beijing.aliyuncs.com/6c80-008ecc1941ff0c56c6000699ad045d08.jpg',
+      'https://itcoffee-util.oss-cn-beijing.aliyuncs.com/72e4e39e.jpeg',
+      'https://itcoffee-util.oss-cn-beijing.aliyuncs.com/f0c9583aee0f468f9d7f8a1b0b253c21.jpeg',
+    ];
+    const quotes = [
+      "你知道我和唐僧的区别吗？唐僧取经，我娶你。",
+      "我一点都不想你，一点点在每分每秒。",
+      "你是我的程序人生里最关键的一行代码。",
+      "想你就像写 bug 一样，不经意间就开始了。",
+      "你的笑容，是我调试一切的动力。",
+      "世界上最远的距离不是天涯海角，是你在我眼前我却点不到你。",
+      "你让我心跳加速，就像主线程卡住了。",
+      "你不在我身边，我的 CPU 都跑不动了。",
+      "你是我的唯一依赖，没有你我寸步难行。",
+      "你让我彻底崩溃，但我甘之如饴。"
+    ];
+
+    let board = [];
+    let selected = null;
+    let score = 0;
+
+    function startNewGame() {
+      score = 0;
+      document.getElementById('score').textContent = score;
+      board = [];
+      const boardDiv = document.getElementById('board');
+      boardDiv.innerHTML = '';
+      for (let i = 0; i < size * size; i++) {
+        const img = document.createElement('img');
+        const type = Math.floor(Math.random() * tileImages.length);
+        img.src = tileImages[type];
+        img.dataset.type = type;
+        img.className = 'tile';
+        img.addEventListener('click', () => handleClick(i));
+        board[i] = img;
+        boardDiv.appendChild(img);
+      }
+      setTimeout(() => checkMatches(true), 200);
+    }
+
+    function handleClick(index) {
+      const tile = board[index];
+      if (selected === null) {
+        selected = index;
+        tile.classList.add('selected');
+      } else if (selected === index) {
+        tile.classList.remove('selected');
+        selected = null;
+      } else {
+        const isAdjacent =
+          Math.abs(selected - index) === 1 || Math.abs(selected - index) === size;
+        if (isAdjacent) {
+          swapTiles(selected, index);
+          selected = null;
+        } else {
+          board[selected].classList.remove('selected');
+          selected = null;
+        }
+      }
+    }
+
+    function swapTiles(i1, i2) {
+      const temp = board[i1].src;
+      const typeTemp = board[i1].dataset.type;
+      board[i1].src = board[i2].src;
+      board[i1].dataset.type = board[i2].dataset.type;
+      board[i2].src = temp;
+      board[i2].dataset.type = typeTemp;
+      setTimeout(() => checkMatches(), 200);
+    }
+
+    function checkMatches(isInitial = false) {
+      let toRemove = new Set();
+
+      // Horizontal match
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size - 2; c++) {
+          const i = r * size + c;
+          const type = board[i].dataset.type;
+          if (
+            type === board[i + 1].dataset.type &&
+            type === board[i + 2].dataset.type
+          ) {
+            toRemove.add(i);
+            toRemove.add(i + 1);
+            toRemove.add(i + 2);
+          }
+        }
+      }
+
+      // Vertical match
+      for (let c = 0; c < size; c++) {
+        for (let r = 0; r < size - 2; r++) {
+          const i = r * size + c;
+          const type = board[i].dataset.type;
+          if (
+            type === board[i + size].dataset.type &&
+            type === board[i + 2 * size].dataset.type
+          ) {
+            toRemove.add(i);
+            toRemove.add(i + size);
+            toRemove.add(i + 2 * size);
+          }
+        }
+      }
+
+      if (toRemove.size > 0) {
+        toRemove.forEach(i => {
+          board[i].classList.add('disappear');
+        });
+        setTimeout(() => {
+          toRemove.forEach(i => {
+            for (let r = Math.floor(i / size); r > 0; r--) {
+              const above = (r - 1) * size + (i % size);
+              board[r * size + (i % size)].src = board[above].src;
+              board[r * size + (i % size)].dataset.type = board[above].dataset.type;
+            }
+            const newType = Math.floor(Math.random() * tileImages.length);
+            board[i % size].src = tileImages[newType];
+            board[i % size].dataset.type = newType;
+            board[i].classList.remove('disappear');
+          });
+          score += toRemove.size * 10;
+          document.getElementById('score').textContent = score;
+          document.getElementById('quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+          setTimeout(() => checkMatches(), 300);
+        }, 300);
+      }
+    }
+
+    startNewGame();
+  </script>
+  <div class="game-instructions">
+    <h2>游戏说明</h2>
+    <div class="instructions-content">
+      <p><strong>游戏规则：</strong></p>
+      <ul>
+        <li>点击一个方块选中它</li>
+        <li>再点击相邻方块进行交换</li>
+        <li>当三个或更多相同图片连成一线时，它们会被消除</li>
+        <li>消除后，上方的方块会下落，顶部会生成新方块</li>
+        <li>每消除一个方块得10分</li>
+        <li>每次消除后会显示一条随机情话</li>
+      </ul>
+      <p><strong>小提示：</strong>尽量寻找可以形成连锁反应的消除组合，这样可以获得更高分数！</p>
+      <p><strong>关于游戏：</strong>这是一个充满爱意的三消游戏，希望能带给你和你的另一半欢乐时光。</p>
+    </div>
+  </div>
+  <style>
+    .game-instructions {
+      margin-top: 2rem;
+      background: #2d2d3c;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      max-width: 800px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.4);
+    }
+    .game-instructions h2 {
+      text-align: center;
+      margin-bottom: 1rem;
+      background: -webkit-linear-gradient(45deg, #7873f5, #ff6ec4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .instructions-content {
+      color: #e0e0e0;
+      line-height: 1.6;
+    }
+    .instructions-content ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .instructions-content p {
+      margin-bottom: 0.8rem;
+    }
+  </style>
+</body>
+</html>
