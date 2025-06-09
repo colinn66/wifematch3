@@ -1,1 +1,1 @@
-this is readme
+game for my wife
